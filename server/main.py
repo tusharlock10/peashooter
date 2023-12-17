@@ -18,6 +18,11 @@ def should_connect(network, client):
 def on_connect(network, client):
     global available_ids, used_ids
 
+    for ship_id in used_ids.values():
+        event = NetworkEvents.NEW_SHIP.value
+        event["value"] = ship_id
+        network.enc_and_send_data(event, client)
+
     ship_id = available_ids.pop()
     used_ids[client] = ship_id
 
