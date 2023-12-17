@@ -1,6 +1,6 @@
 import pygame
 from bullet import Bullet
-from constants import SCREEN_HEIGHT, SCREEN_WIDTH
+from constants import SCREEN_HEIGHT, SCREEN_WIDTH, NetworkEvents
 from network import ClientNetwork
 from spaceship import Spaceship
 
@@ -11,9 +11,16 @@ pygame.init()
 win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Multiplayer Shooter Game")
 
+ship = Spaceship(0)
+
 
 def parse_game_events(data):
+    global ship
+
     print("Got data :: ", data)
+    if data["type"] == NetworkEvents.SHIP_ID.value["type"]:
+        ship_id = data["value"]
+        ship = Spaceship(ship_id)
 
 
 # Networking setup for UDP
@@ -27,9 +34,6 @@ def main():
     clock = pygame.time.Clock()
 
     running = True
-
-    # Spaceship
-    ship = Spaceship(0)
 
     # Bullets
     bullets = []

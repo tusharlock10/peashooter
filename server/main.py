@@ -56,7 +56,8 @@ def start_server():
 
     while True:
         data, client = network.wait_for_data()
-        network.broadcast_data(data, [client])
+        if data and client:
+            network.broadcast_data(data, [client])
 
 
 if __name__ == "__main__":

@@ -19,7 +19,10 @@ class ServerNetwork:
 
     def wait_for_data(self):
         data, client = self.server.recvfrom(1024)
-        self.parse_connection_events(data, client)
+        is_connection_event = self.parse_connection_events(data, client)
+
+        if is_connection_event:
+            return None, None
         return data, client
 
     def __send_data(self, data, client):
@@ -48,9 +51,13 @@ class ServerNetwork:
                 self.on_connect(self, client)
             else:
                 print(f"[CONNECTION REFUSED] {client}")
+            return True
 
         if dec_data == NetworkEvents.DISCONNECT.value:
             print(f"[DISCONNECTED] {client}")
             self.clients.remove(client)
             print(f"{len(self.clients)} clients available")
             self.on_disconnect(self, client)
+            return True
+
+        return False
