@@ -1,57 +1,25 @@
-import socket
-import threading
-
 import pygame
-
 from bullet import Bullet
+from constants import SCREEN_HEIGHT, SCREEN_WIDTH
+from network import ClientNetwork
 from spaceship import Spaceship
 
 # Initialize Pygame
 pygame.init()
 
 # Screen dimensions
-WIDTH, HEIGHT = 800, 600
-win = pygame.display.set_mode((WIDTH, HEIGHT))
+win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Multiplayer Shooter Game")
 
+
+def parse_game_events(data):
+    print("Got data :: ", data)
+
+
 # Networking setup for UDP
-server_ip = "127.0.0.1"  # Server's IP address
-server_port = 5555  # Server's port
-client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-other_ships = {}
-
-
-def receive_messages():
-    while True:
-        try:
-            data, _ = client.recvfrom(1024)
-            data = data.decode()
-            update_other_ships(data)
-        except Exception as e:
-            print(f"Error receiving data: {e}")
-            break
-
-
-def update_other_ships(data):
-    global other_ships
-    ships = data.split("|")
-    for ship_data in ships:
-        ship_id, x, y = ship_data.split(",")
-        other_ships[int(ship_id)] = (float(x), float(y))
-
-
-# Spaceship settings
-ship_color = (255, 0, 0)  # Red color
-ship = Spaceship(WIDTH // 2, HEIGHT // 2, 50, 50, ship_color, WIDTH, HEIGHT)
-
-# Bullets
-bullets = []
-last_bullet_time = 0
-last_position = (ship.x, ship.y)
-
-# Start listening for messages
-thread = threading.Thread(target=receive_messages)
-thread.start()
+network = ClientNetwork()
+network.create_connection()
+network.receive_data(parse_game_events)
 
 
 def main():
@@ -59,6 +27,15 @@ def main():
     clock = pygame.time.Clock()
 
     running = True
+
+    # Spaceship
+    ship = Spaceship(0)
+
+    # Bullets
+    bullets = []
+    last_bullet_time = 0
+    last_position = (ship.x, ship.y)
+
     while running:
         clock.tick(45)  # 45 frames per second
         current_time = pygame.time.get_ticks()
@@ -85,8 +62,8 @@ def main():
 
         # Send data to the server only if there's movement or shooting
         if movement or shooting:
-            data = f"{id(client)},{ship.get_data()}"
-            client.sendto(data.encode(), (server_ip, server_port))
+            data = f"{network.client_id},{ship.get_data()}"
+            network.send_data(data)
             last_position = (ship.x, ship.y)
 
         win.fill((173, 216, 230))  # Light blue background
@@ -94,18 +71,13 @@ def main():
         for bullet in bullets[:]:
             bullet.move()
             bullet.draw(win)
-            if bullet.off_screen(WIDTH, HEIGHT):
+            if bullet.off_screen(SCREEN_WIDTH, SCREEN_HEIGHT):
                 bullets.remove(bullet)
-
-        # Draw other ships
-        for ship_id, (x, y) in other_ships.items():
-            if ship_id != id(client):  # Don't draw own ship
-                pygame.draw.rect(win, (0, 255, 0), (x, y, 50, 50))
 
         pygame.display.update()
 
     pygame.quit()
-    client.close()
+    network.close()
 
 
 if __name__ == "__main__":

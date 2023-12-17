@@ -1,21 +1,28 @@
 import math
 
 import pygame
+from constants import ID_COLOR_MAP, SCREEN_HEIGHT, SCREEN_WIDTH
 
 
 class Spaceship:
     def __init__(
-        self, x, y, width, height, color, screen_width, screen_height, speed=5
+        self,
+        ship_id,
+        width=50,
+        height=50,
+        speed=5,
+        health=100,
+        start_x=SCREEN_WIDTH // 2,
+        start_y=SCREEN_HEIGHT // 2,
     ):
-        self.x = x
-        self.y = y
+        self.ship_id = ship_id
+        self.x = start_x
+        self.y = start_y
         self.width = width
         self.height = height
-        self.color = color
-        self.screen_width = screen_width
-        self.screen_height = screen_height
         self.speed = speed
-        self.health = 100
+        self.health = health
+        self.color = ID_COLOR_MAP[ship_id]
 
     def draw(self, win):
         pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.height))
@@ -36,8 +43,8 @@ class Spaceship:
             x_move /= math.sqrt(2)
             y_move /= math.sqrt(2)
 
-        self.x = max(min(self.x + x_move, self.screen_width - self.width), 0)
-        self.y = max(min(self.y + y_move, self.screen_height - self.height), 0)
+        self.x = max(min(self.x + x_move, SCREEN_WIDTH - self.width), 0)
+        self.y = max(min(self.y + y_move, SCREEN_HEIGHT - self.height), 0)
 
     def get_data(self):
         return f"{self.x},{self.y}"
