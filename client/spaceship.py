@@ -1,7 +1,7 @@
 import math
 
 import pygame
-from constants import ID_COLOR_MAP, SCREEN_HEIGHT, SCREEN_WIDTH
+from constants import ID_COLOR_MAP, SCREEN_HEIGHT, SCREEN_WIDTH, NetworkEvents
 
 
 class Spaceship:
@@ -46,11 +46,28 @@ class Spaceship:
         self.x = max(min(self.x + x_move, SCREEN_WIDTH - self.width), 0)
         self.y = max(min(self.y + y_move, SCREEN_HEIGHT - self.height), 0)
 
-    def get_data(self):
-        return f"{self.x},{self.y}"
+    def get_ship_data(self):
+        return {
+            "ship_id": self.ship_id,
+            "x": self.x,
+            "y": self.y,
+            "health": self.health,
+        }
+
+    def change_position_network_event(self):
+        event = NetworkEvents.CHANGE_POSITION.value
+        event["value"] = self.get_ship_data()
+        return event
 
     def get_darker_color(self):
         return tuple(max(component // 2, 0) for component in self.color)
 
     def get_position(self):
         return self.x, self.y
+
+    def set_position(self, x, y):
+        self.x = x
+        self.y = y
+
+    def set_health(self, health):
+        self.health = health

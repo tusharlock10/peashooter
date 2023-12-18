@@ -12,6 +12,32 @@ win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Multiplayer Shooter Game")
 
 ship = Spaceship(0)
+other_ships = {}
+
+
+def handle_ship_id(data):
+    global ship
+
+    ship_id = data["value"]
+    ship = Spaceship(ship_id)
+
+
+def handle_new_ships(data):
+    global other_ships
+
+    ship_id = data["value"]
+    new_ship = Spaceship(ship_id)
+    other_ships[ship_id] = new_ship
+
+
+def handle_ship_position_change(data):
+    global other_ships
+
+    value = data["value"]
+    ship_id = value["ship_id"]
+    other_ship = other_ships[ship_id]
+    other_ship.set_health(value["health"])
+    other_ship.set_position(value["x"], value["y"])
 
 
 def parse_game_events(data):
@@ -19,8 +45,13 @@ def parse_game_events(data):
 
     print("Got data :: ", data)
     if data["type"] == NetworkEvents.SHIP_ID.value["type"]:
-        ship_id = data["value"]
-        ship = Spaceship(ship_id)
+        handle_ship_id(data)
+
+    if data["type"] == NetworkEvents.NEW_SHIP.value["type"]:
+        handle_new_ships(data)
+
+    if data["type"] == NetworkEvents.CHANGE_POSITION.value["type"]:
+        handle_ship_position_change(data)
 
 
 # Networking setup for UDP
@@ -66,17 +97,20 @@ def main():
 
         # Send data to the server only if there's movement or shooting
         if movement or shooting:
-            data = f"{network.client_id},{ship.get_data()}"
+            data = ship.change_position_network_event()
             network.send_data(data)
             last_position = (ship.x, ship.y)
 
         win.fill((173, 216, 230))  # Light blue background
         ship.draw(win)
-        for bullet in bullets[:]:
+        for bullet in bullets:
             bullet.move()
             bullet.draw(win)
             if bullet.off_screen(SCREEN_WIDTH, SCREEN_HEIGHT):
                 bullets.remove(bullet)
+
+        for other_ship in other_ships.values():
+            other_ship.draw(win)
 
         pygame.display.update()
 
