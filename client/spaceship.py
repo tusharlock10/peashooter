@@ -1,6 +1,7 @@
 import math
 
 import pygame
+from bullet import Bullet
 from constants import ID_COLOR_MAP, SCREEN_HEIGHT, SCREEN_WIDTH, NetworkEvents
 
 
@@ -59,9 +60,6 @@ class Spaceship:
         event["value"] = self.get_ship_data()
         return event
 
-    def get_darker_color(self):
-        return tuple(max(component // 2, 0) for component in self.color)
-
     def get_position(self):
         return self.x, self.y
 
@@ -71,3 +69,9 @@ class Spaceship:
 
     def set_health(self, health):
         self.health = health
+
+    def create_bullet(self):
+        x = self.x + self.width // 2
+        y = self.y + self.height // 2
+        direction = [0, -1]
+        return Bullet(self.ship_id, x, y, direction)

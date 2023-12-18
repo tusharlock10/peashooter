@@ -10,6 +10,7 @@ class NetworkEvents(Enum):
     NEW_SHIP = {"type": "new_ship", "value": None}
     REMOVE_SHIP = {"type": "remove_ship", "value": None}
     CHANGE_POSITION = {"type": "change_position", "value": None}
+    CREATE_BULLET = {"type": "create_bullet", "value": None}
 
 
 class MaterialColors(Enum):

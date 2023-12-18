@@ -13,6 +13,7 @@ pygame.display.set_caption("Multiplayer Shooter Game")
 
 ship = Spaceship(0)
 other_ships = {}
+other_bullets = []
 
 
 def handle_ship_id(data):
@@ -40,6 +41,19 @@ def handle_ship_position_change(data):
     other_ship.set_position(value["x"], value["y"])
 
 
+def handle_create_bullet(data):
+    global other_bullets
+
+    value = data["value"]
+    bullet = Bullet(
+        ship_id=value["ship_id"],
+        x=value["x"],
+        y=value["y"],
+        direction=value["direction"],
+    )
+    other_bullets.append(bullet)
+
+
 def parse_game_events(data):
     global ship
 
@@ -52,6 +66,9 @@ def parse_game_events(data):
 
     if data["type"] == NetworkEvents.CHANGE_POSITION.value["type"]:
         handle_ship_position_change(data)
+
+    if data["type"] == NetworkEvents.CREATE_BULLET.value["type"]:
+        handle_create_bullet(data)
 
 
 # Networking setup for UDP
@@ -83,20 +100,17 @@ def main():
         ship.move(keys)
 
         movement = (ship.x, ship.y) != last_position
-        shooting = False
 
         if keys[pygame.K_SPACE] and current_time - last_bullet_time > 500:
-            x, y = ship.get_position()
-            x += ship.width // 2
-            y += ship.height // 2
-            bullet_direction = [0, -1]  # Default up
-            bullet_color = ship.get_darker_color()
-            bullets.append(Bullet(x, y, 7, bullet_color, bullet_direction))
+            bullet = ship.create_bullet()
+            bullets.append(bullet)
             last_bullet_time = current_time
-            shooting = True
+
+            data = bullet.create_bullet_network_event()
+            network.send_data(data)
 
         # Send data to the server only if there's movement or shooting
-        if movement or shooting:
+        if movement:
             data = ship.change_position_network_event()
             network.send_data(data)
             last_position = (ship.x, ship.y)
@@ -108,6 +122,12 @@ def main():
             bullet.draw(win)
             if bullet.off_screen(SCREEN_WIDTH, SCREEN_HEIGHT):
                 bullets.remove(bullet)
+
+        for bullet in other_bullets:
+            bullet.move()
+            bullet.draw(win)
+            if bullet.off_screen(SCREEN_WIDTH, SCREEN_HEIGHT):
+                other_bullets.remove(bullet)
 
         for other_ship in other_ships.values():
             other_ship.draw(win)
